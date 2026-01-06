@@ -8,7 +8,8 @@
 import { NextRequest, NextResponse } from 'next/server';
 
 const ANAM_API_KEY = process.env.ANAM_API_KEY;
-const ANAM_AVATAR_ID = process.env.ANAM_AVATAR_ID || 'anna-generic-1';
+// Use a known working avatar ID from Anam's gallery
+const ANAM_AVATAR_ID = process.env.ANAM_AVATAR_ID || 'anna-generic-1';  // Fallback to public avatar
 
 export async function GET(request: NextRequest) {
   try {
@@ -33,8 +34,11 @@ export async function GET(request: NextRequest) {
       },
       body: JSON.stringify({
         personaConfig: {
+          name: "Nova",
           avatarId: ANAM_AVATAR_ID,
-          // NO audio passthrough - standard mode with built-in AI
+          voiceId: "6bfbe25a-979d-40f3-a92b-5394170af54b", // Default Anam voice
+          llmId: "0934d97d-0c3a-4f33-91b0-5e136a0ef466", // Default Anam LLM
+          systemPrompt: "You are Nova, a friendly research assistant helping with consumer transparency studies.",
         },
       }),
     });
