@@ -99,6 +99,28 @@ export function AnamElevenLabsTranscript({
     messagesEndRef.current?.scrollIntoView({ behavior: 'smooth' });
   }, [messages]);
   
+  // Cleanup on unmount to prevent Anam concurrency limit errors
+  useEffect(() => {
+    return () => {
+      if (anamClientRef.current) {
+        try {
+          anamClientRef.current.stopStreaming();
+          console.log('🧹 Cleaned up Anam session on unmount');
+        } catch (err) {
+          console.warn('Error cleaning up Anam session:', err);
+        }
+      }
+      if (elevenLabsClientRef.current) {
+        try {
+          elevenLabsClientRef.current.disconnect();
+          console.log('🧹 Cleaned up ElevenLabs connection on unmount');
+        } catch (err) {
+          console.warn('Error cleaning up ElevenLabs:', err);
+        }
+      }
+    };
+  }, []);
+  
   // Initialize Anam avatar
   const initializeAvatar = useCallback(async () => {
     if (!videoRef.current) return;
@@ -134,8 +156,15 @@ export function AnamElevenLabsTranscript({
       setAvatarReady(true);
       
       console.log('✅ Anam avatar ready');
-    } catch (error) {
+    } catch (error: any) {
       console.error('Failed to initialize Anam:', error);
+      
+      // Check for concurrency limit error
+      if (error?.message?.includes('Concurrency limit') || error?.statusCode === 429) {
+        console.error('⚠️ CONCURRENCY LIMIT: Close other Anam sessions (e.g., /anam-simple-test.html) and try again');
+        alert('❌ Anam concurrency limit reached!\n\nPlease:\n1. Close other tabs with Anam avatars\n2. Refresh this page\n3. Try again\n\nNote: Free tier allows only 1 active session at a time.');
+      }
+      
       setAvatarReady(false);
     }
   }, []);

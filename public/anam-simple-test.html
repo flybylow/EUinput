@@ -81,6 +81,17 @@
     
     let client = null;
     
+    // Auto-cleanup on page unload to prevent concurrency limit
+    window.addEventListener('beforeunload', () => {
+      if (client) {
+        try {
+          client.stopStreaming();
+        } catch (err) {
+          console.warn('Cleanup error:', err);
+        }
+      }
+    });
+    
     function log(msg) {
       console.log(msg);
       logEl.innerHTML += `${new Date().toLocaleTimeString()}: ${msg}<br>`;
