@@ -43,8 +43,12 @@ export async function GET(request: NextRequest) {
       },
       body: JSON.stringify({
         personaConfig: {
+          name: "Nova",
           avatarId: ANAM_AVATAR_ID,
-          enableAudioPassthrough: true, // Re-enabled for direct WebSocket implementation
+          voiceId: "6bfbe25a-979d-40f3-a92b-5394170af54b", // Required even with passthrough
+          llmId: "0934d97d-0c3a-4f33-91b0-5e136a0ef466", // Required even with passthrough
+          systemPrompt: "You are Nova, a friendly research assistant.",
+          enableAudioPassthrough: true, // Enable ElevenLabs audio forwarding
         },
         // Optional: Store tracking metadata
         metadata: {
