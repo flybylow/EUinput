@@ -1,7 +1,7 @@
 'use client';
 
 import { useState, useCallback } from 'react';
-import { ElevenLabsTranscript } from './ElevenLabsTranscript';
+import { AnamElevenLabsTranscript } from './AnamElevenLabsTranscript';
 
 interface ResearchPageProps {
   searchParams: {
@@ -236,36 +236,14 @@ export default function ResearchPage({ searchParams }: ResearchPageProps) {
   const { source, campaign, ref } = searchParams;
   const [view, setView] = useState<ViewState>('consent');
   const [messageCount, setMessageCount] = useState(0);
-  const [signedUrl, setSignedUrl] = useState<string>('');
   const [userEmail, setUserEmail] = useState<string>('');
   const [userCountry, setUserCountry] = useState<string>('');
   
-  // Handle consent acceptance - get signed URL
+  // Handle consent acceptance - start conversation
   const handleAccept = useCallback(async () => {
-    try {
-      // Build URL with tracking params
-      const params = new URLSearchParams();
-      if (source) params.set('source', source);
-      if (campaign) params.set('campaign', campaign);
-      if (ref) params.set('ref', ref);
-
-      // Get signed URL from our API
-      const response = await fetch(
-        `/api/elevenlabs-signed-url?${params.toString()}`
-      );
-
-      if (!response.ok) {
-        throw new Error('Failed to get conversation URL');
-      }
-
-      const { signedUrl: url } = await response.json();
-      setSignedUrl(url);
-      setView('conversation');
-    } catch (error) {
-      console.error('Failed to get signed URL:', error);
-      alert('Failed to start conversation. Please try again.');
-    }
-  }, [source, campaign, ref]);
+    // Direct WebSocket connection - no signed URL needed
+    setView('conversation');
+  }, []);
   
   // Handle conversation end - go to email capture
   const handleConversationEnd = useCallback(async (messages: Message[]) => {
@@ -303,13 +281,11 @@ export default function ResearchPage({ searchParams }: ResearchPageProps) {
       
       {view === 'conversation' && (
         <div className="w-full max-w-4xl">
-          <ElevenLabsTranscript
-            signedUrl={signedUrl}
+          <AnamElevenLabsTranscript
+            agentId={process.env.NEXT_PUBLIC_ELEVENLABS_AGENT_ID!}
             agentName="Nova"
-            agentAvatar="🎙️"
             onConversationEnd={handleConversationEnd}
             className="h-[600px]"
-            enableAvatar={false}  // Disabled: Audio passthrough has SDK issues
           />
           
           <p className="text-center text-xs text-gray-400 mt-4">
