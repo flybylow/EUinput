@@ -9,6 +9,7 @@
 
 import { useConversation, type Role } from '@elevenlabs/react';
 import { useCallback, useEffect, useRef, useState } from 'react';
+import { createClient } from '@anam-ai/js-sdk';
 
 // -----------------------------------------------------------------------------
 // Types
@@ -29,6 +30,7 @@ interface TranscriptProps {
   agentAvatar?: string;
   onConversationEnd?: (messages: Message[]) => void;
   className?: string;
+  enableAvatar?: boolean; // Enable Anam avatar integration
 }
 
 // -----------------------------------------------------------------------------
@@ -140,11 +142,16 @@ export function ElevenLabsTranscript({
   agentAvatar = '🤖',
   onConversationEnd,
   className = '',
+  enableAvatar = false,
 }: TranscriptProps) {
   const [messages, setMessages] = useState<Message[]>([]);
   const [isStarted, setIsStarted] = useState(false);
+  const [avatarReady, setAvatarReady] = useState(false);
   const messagesEndRef = useRef<HTMLDivElement>(null);
   const messagesRef = useRef<Message[]>([]); // Keep a ref to avoid stale closure
+  const videoRef = useRef<HTMLVideoElement>(null);
+  const anamClientRef = useRef<any>(null);
+  const audioInputStreamRef = useRef<any>(null);
   
   // Auto-scroll to bottom
   const scrollToBottom = useCallback(() => {
@@ -154,6 +161,55 @@ export function ElevenLabsTranscript({
   useEffect(() => {
     scrollToBottom();
   }, [messages, scrollToBottom]);
+  
+  // Initialize Anam avatar
+  const initializeAvatar = useCallback(async () => {
+    if (!enableAvatar || !videoRef.current) return;
+    
+    try {
+      console.log('Initializing Anam avatar...');
+      
+      // Get Anam session token from our API
+      const response = await fetch('/api/anam-session');
+      if (!response.ok) {
+        throw new Error('Failed to get Anam session token');
+      }
+      
+      const { sessionToken } = await response.json();
+      
+      // Create Anam client with audio passthrough (ElevenLabs handles microphone)
+      const anamClient = createClient(sessionToken, {
+        disableInputAudio: true, // ElevenLabs handles microphone
+      });
+      
+      // Stream avatar to video element
+      await anamClient.streamToVideoElement(videoRef.current);
+      
+      // Create agent audio input stream for lip-sync
+      const audioInputStream = anamClient.createAgentAudioInputStream({
+        encoding: 'pcm_s16le',
+        sampleRate: 16000,
+        channels: 1,
+      });
+      
+      anamClientRef.current = anamClient;
+      audioInputStreamRef.current = audioInputStream;
+      setAvatarReady(true);
+      
+      console.log('Anam avatar initialized successfully');
+    } catch (error) {
+      console.error('Failed to initialize Anam avatar:', error);
+      // Continue without avatar
+      setAvatarReady(false);
+    }
+  }, [enableAvatar]);
+  
+  // Initialize avatar on component mount
+  useEffect(() => {
+    if (enableAvatar) {
+      initializeAvatar();
+    }
+  }, [enableAvatar, initializeAvatar]);
   
   // ElevenLabs conversation hook
   const conversation = useConversation({
@@ -262,15 +318,20 @@ export function ElevenLabsTranscript({
       {/* Header */}
       <div className="flex items-center justify-between px-4 py-3 border-b bg-gray-50">
         <div className="flex items-center gap-3">
-          <div className="w-10 h-10 rounded-full bg-blue-100 flex items-center justify-center text-xl">
-            {agentAvatar}
-          </div>
+          {!enableAvatar && (
+            <div className="w-10 h-10 rounded-full bg-blue-100 flex items-center justify-center text-xl">
+              {agentAvatar}
+            </div>
+          )}
           <div>
             <h3 className="font-semibold text-gray-800">{agentName}</h3>
             <StatusIndicator 
               status={conversation.status} 
               isSpeaking={conversation.isSpeaking} 
             />
+            {enableAvatar && avatarReady && (
+              <span className="text-xs text-green-600">✓ Avatar ready</span>
+            )}
           </div>
         </div>
         
@@ -292,8 +353,31 @@ export function ElevenLabsTranscript({
         )}
       </div>
       
-      {/* Messages */}
-      <div className="flex-1 overflow-y-auto p-4 space-y-4">
+      {/* Main Content Area */}
+      <div className={`flex-1 flex ${enableAvatar ? 'flex-row' : 'flex-col'} overflow-hidden`}>
+        {/* Avatar Video (if enabled) */}
+        {enableAvatar && (
+          <div className="w-1/2 bg-gradient-to-b from-gray-900 to-gray-800 flex items-center justify-center p-4">
+            <video
+              ref={videoRef}
+              autoPlay
+              playsInline
+              className="w-full h-full object-cover rounded-lg"
+              style={{ transform: 'scaleX(-1)' }} // Mirror the video for natural appearance
+            />
+            {!avatarReady && (
+              <div className="absolute inset-0 flex items-center justify-center bg-gray-900/50">
+                <div className="text-white text-center">
+                  <div className="animate-spin text-4xl mb-2">🔄</div>
+                  <p>Loading avatar...</p>
+                </div>
+              </div>
+            )}
+          </div>
+        )}
+        
+        {/* Messages */}
+        <div className={`${enableAvatar ? 'w-1/2' : 'w-full'} flex-1 overflow-y-auto p-4 space-y-4`}>
         {messages.length === 0 && !isStarted && (
           <div className="flex flex-col items-center justify-center h-full text-gray-400">
             <div className="text-4xl mb-2">🎙️</div>
@@ -318,6 +402,7 @@ export function ElevenLabsTranscript({
         ))}
         
         <div ref={messagesEndRef} />
+        </div>
       </div>
       
       {/* Footer */}

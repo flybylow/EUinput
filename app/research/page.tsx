@@ -302,13 +302,14 @@ export default function ResearchPage({ searchParams }: ResearchPageProps) {
       )}
       
       {view === 'conversation' && (
-        <div className="w-full max-w-lg">
+        <div className="w-full max-w-4xl">
           <ElevenLabsTranscript
             signedUrl={signedUrl}
             agentName="Nova"
             agentAvatar="🎙️"
             onConversationEnd={handleConversationEnd}
             className="h-[600px]"
+            enableAvatar={true}
           />
           
           <p className="text-center text-xs text-gray-400 mt-4">
