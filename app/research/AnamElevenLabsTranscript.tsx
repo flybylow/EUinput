@@ -288,14 +288,14 @@ export function AnamElevenLabsTranscript({
       </div>
       
       {/* Main Content */}
-      <div className="flex-1 flex flex-row overflow-hidden">
-        {/* Avatar Video */}
-        <div className="w-1/2 bg-gradient-to-b from-gray-900 to-gray-800 flex items-center justify-center p-4 relative">
+      <div className="flex-1 flex flex-col overflow-hidden">
+        {/* Avatar Video - Top */}
+        <div className="h-80 bg-gradient-to-b from-gray-900 to-gray-800 flex items-center justify-center p-4 relative">
           <video
             ref={videoRef}
             autoPlay
             playsInline
-            className="w-full h-full object-cover rounded-lg"
+            className="h-full object-contain rounded-lg"
             style={{ transform: 'scaleX(-1)' }}
           />
           {!avatarReady && (
@@ -308,8 +308,8 @@ export function AnamElevenLabsTranscript({
           )}
         </div>
         
-        {/* Messages */}
-        <div className="w-1/2 flex-1 overflow-y-auto p-4 space-y-4">
+        {/* Messages - Bottom */}
+        <div className="flex-1 overflow-y-auto p-4 space-y-4 bg-gray-50">
           {messages.length === 0 && !isStarted && (
             <div className="flex flex-col items-center justify-center h-full text-gray-400">
               <div className="text-4xl mb-2">🎙️</div>
