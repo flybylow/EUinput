@@ -1,387 +1,303 @@
-# Anam Avatar Integration
-
-**Date:** January 6, 2026  
-**Status:** ✅ Integrated (Beta)  
-**Branch:** `avatar-integration`
-
----
+# Anam Avatar Integration Guide
 
 ## Overview
 
-The EUinput research platform now includes optional visual AI avatars powered by [Anam.ai](https://anam.ai). This adds a lifelike talking avatar with real-time lip-sync to the ElevenLabs conversational AI experience.
+Successfully integrated Anam.ai visual avatars with real-time AI conversation using the `@anam-ai/js-sdk`. This document covers everything learned during the integration process.
 
----
+## Key Components
 
-## How It Works
+### 1. Session Token Generation
 
-**Architecture:**
-```
-User speaks → ElevenLabs (AI processing) →
-  ├─ Audio output → Anam avatar (lip-sync)
-  └─ Text transcript → Chat bubbles
-```
+Anam requires **ephemeral session tokens** with a complete persona configuration. Legacy tokens without full persona configs are no longer supported.
 
-**Division of Labor:**
-- **ElevenLabs**: Speech recognition, LLM intelligence, voice synthesis
-- **Anam**: Visual avatar with lip-sync animation
-- **Your App**: Orchestrates both + displays chat transcript
+**API Endpoint:** `/app/api/anam-session-standard/route.ts`
 
----
-
-## Setup
-
-### 1. Get Anam API Credentials
-
-1. Create account at [lab.anam.ai](https://lab.anam.ai)
-2. Go to Settings → API Keys
-3. Generate an API key
-4. Choose or create an avatar
-
-### 2. Add Environment Variables
-
-Add to your `.env.local`:
-
-```bash
-# Anam.ai credentials
-ANAM_API_KEY=your_anam_api_key_here
-ANAM_AVATAR_ID=anna-generic-1  # Or your custom avatar ID
-```
-
-### 3. Avatar Gallery
-
-**Stock Avatars:**
-Browse ready-to-use avatars at: https://docs.anam.ai/resources/avatar-gallery
-
-**Popular Options:**
-- `anna-generic-1` - Professional female avatar
-- `david-generic-1` - Professional male avatar
-- `sarah-generic-1` - Friendly female avatar
-
-**Custom Avatars:**
-Create your own at [lab.anam.ai](https://lab.anam.ai) with custom appearance and style.
-
----
-
-## Files Added/Modified
-
-### New Files
-
-```
-app/api/anam-session/route.ts     # Server-side session token generation
-docs/anam-avatar-integration.md   # This documentation
-```
-
-### Modified Files
-
-```
-app/research/ElevenLabsTranscript.tsx  # Added avatar integration
-app/research/page.tsx                  # Enabled avatar feature
-package.json                           # Added @anam-ai/js-sdk, chatdio
-```
-
----
-
-## Usage
-
-### Enable Avatar
-
-The avatar is controlled by the `enableAvatar` prop:
-
-```tsx
-<ElevenLabsTranscript
-  signedUrl={signedUrl}
-  agentName="Nova"
-  enableAvatar={true}  // ← Enable avatar
-  className="h-[600px]"
-/>
-```
-
-### Disable Avatar
-
-To revert to chat bubbles only:
-
-```tsx
-<ElevenLabsTranscript
-  signedUrl={signedUrl}
-  agentName="Nova"
-  enableAvatar={false}  // ← Chat bubbles only
-  className="h-[600px]"
-/>
-```
-
----
-
-## UI Layout
-
-### With Avatar Enabled
-
-```
-┌─────────────────────────────────────────┐
-│  Nova                      🔴 End       │
-├─────────────────┬───────────────────────┤
-│                 │  Nova: Hello!         │
-│   [Avatar       │  You: Hi there        │
-│    Video]       │  Nova: How are you?   │
-│                 │  You: Good thanks     │
-└─────────────────┴───────────────────────┘
-    50% width          50% width
-```
-
-### Without Avatar
-
-```
-┌───────────────────────────────────────┐
-│  🎙️ Nova              🔴 End          │
-├───────────────────────────────────────┤
-│        Nova: Hello!                   │
-│        You: Hi there                  │
-│        Nova: How are you?             │
-│        You: Good thanks               │
-└───────────────────────────────────────┘
-           100% width
-```
-
----
-
-## Technical Implementation
-
-### Audio Passthrough Mode
-
-Anam runs in "audio passthrough" mode where:
-- Anam **does not** use its own AI or microphone
-- ElevenLabs handles all audio processing
-- Anam only provides visual lip-sync to ElevenLabs audio
-
-### Session Flow
-
-1. **Initialize Anam**
-   - Fetch session token from `/api/anam-session`
-   - Create Anam client with `disableInputAudio: true`
-   - Create audio input stream for lip-sync
-
-2. **Start Conversation**
-   - ElevenLabs handles microphone and audio
-   - Audio chunks forwarded to Anam
-   - Anam renders lip-sync animation
-
-3. **End Conversation**
-   - Both sessions closed gracefully
-   - Resources cleaned up
-
----
-
-## API Endpoint
-
-### GET /api/anam-session
-
-Returns an Anam session token for the client.
-
-**Query Parameters:**
-- `source` - Tracking source (optional)
-- `campaign` - Campaign identifier (optional)
-- `ref` - Referral identifier (optional)
-
-**Response:**
-```json
-{
-  "sessionToken": "eyJhbGc...",
-  "avatarId": "anna-generic-1"
-}
-```
-
-**Server-side Configuration:**
 ```typescript
-{
-  personaConfig: {
-    avatarId: ANAM_AVATAR_ID,
-    enableAudioPassthrough: true  // Enable external audio
-  }
-}
+const response = await fetch('https://api.anam.ai/v1/auth/session-token', {
+  method: 'POST',
+  headers: {
+    'Content-Type': 'application/json',
+    Authorization: `Bearer ${ANAM_API_KEY}`,
+  },
+  body: JSON.stringify({
+    personaConfig: {
+      name: "Nova",
+      avatarId: ANAM_AVATAR_ID,        // REQUIRED
+      voiceId: "...",                   // REQUIRED
+      llmId: "...",                     // REQUIRED
+      systemPrompt: "...",              // REQUIRED
+    },
+  }),
+});
 ```
 
----
+### 2. Required Persona Configuration
 
-## Audio Format Requirements
+All fields are **mandatory** for ephemeral sessions:
 
-**Important:** Audio format must match between ElevenLabs and Anam:
+| Field | Type | Description | Required |
+|-------|------|-------------|----------|
+| `name` | string | Display name for the persona | ✅ Yes |
+| `avatarId` | string | Avatar ID from your Anam account | ✅ Yes |
+| `voiceId` | string | Voice ID for TTS | ✅ Yes |
+| `llmId` | string | LLM model ID | ✅ Yes |
+| `systemPrompt` | string | System instructions for the AI | ✅ Yes |
 
-| Setting         | Value      | Required |
-| --------------- | ---------- | -------- |
-| **Encoding**    | PCM 16-bit | ✅        |
-| **Sample Rate** | 16000 Hz   | ✅        |
-| **Channels**    | Mono (1)   | ✅        |
+**Important:** Omitting `avatarId` will cause error: `"Avatar ID is required for ephemeral sessions."`
 
-Mismatched formats will cause lip-sync issues.
+### 3. Environment Variables
 
----
-
-## Current Limitations
-
-### 1. Audio Passthrough
-
-The current implementation uses the `@elevenlabs/react` SDK which doesn't expose raw audio chunks. The Anam integration is ready but needs direct WebSocket access for full audio passthrough.
-
-**Status:** UI ready, audio passthrough requires enhancement
-
-**Options:**
-1. Switch to direct ElevenLabs WebSocket API
-2. Wait for SDK update with audio event support
-3. Use Anam's built-in AI instead of passthrough
-
-### 2. Mobile Support
-
-Avatar rendering is optimized for desktop. Mobile users may see:
-- Higher bandwidth usage
-- Battery drain
-- Smaller video display
-
-**Recommendation:** Consider disabling avatar on mobile devices.
-
----
-
-## Troubleshooting
-
-### Avatar Not Loading
-
-**Check:**
-1. `ANAM_API_KEY` is set in environment
-2. `ANAM_AVATAR_ID` is valid
-3. Browser console for errors
-4. Network tab for API calls
-
-**Fix:**
 ```bash
-# Verify credentials
-curl -H "Authorization: Bearer YOUR_API_KEY" \
-  https://api.anam.ai/v1/auth/session-token
+# .env.local
+ANAM_API_KEY=your-api-key-here
+ANAM_AVATAR_ID=your-avatar-id-here
+```
 
-# Restart dev server
+**Note:** Next.js dev server must be restarted after changing `.env.local` to pick up new values.
+
+### 4. Client SDK Usage
+
+#### Basic Implementation
+
+```javascript
+import { createClient } from '@anam-ai/js-sdk';
+
+// 1. Get session token from your API
+const response = await fetch('/api/anam-session-standard');
+const { sessionToken } = await response.json();
+
+// 2. Create client
+const client = createClient(sessionToken);
+
+// 3. Start session
+await client.startSession();
+
+// 4. Stream to video element
+await client.streamToVideoElement('video-element-id'); // Pass ID string, not element
+
+// 5. Stop streaming
+await client.stopStreaming();
+```
+
+#### Available Client Methods
+
+The Anam client provides these methods:
+
+**Session Management:**
+- `startSession()` - Initiate the avatar session
+- `startSessionIfNeeded()` - Start only if not already active
+- `stopStreaming()` - Stop the avatar stream
+- `getActiveSessionId()` - Get current session ID
+
+**Streaming:**
+- `stream()` - Start media stream
+- `streamToVideoElement(elementId)` - Stream to specific video element (pass ID string)
+- `streamToVideoAndAudioElements(videoId, audioId)` - Stream to separate elements
+- `isStreaming()` - Check streaming status
+
+**Interaction:**
+- `talk(message)` - Send text message to avatar
+- `sendUserMessage(message)` - Send user message
+- `sendDataMessage(data)` - Send data payload
+- `interruptPersona()` - Interrupt avatar speaking
+
+**Audio Control:**
+- `getInputAudioState()` - Get microphone state
+- `muteInputAudio()` - Mute user microphone
+- `unmuteInputAudio()` - Unmute user microphone
+- `changeAudioInputDevice(deviceId)` - Switch audio input
+
+**Advanced:**
+- `createTalkMessageStream()` - Create message stream
+- `createAgentAudioInputStream()` - For audio passthrough mode
+- `setPersonaConfig(config)` - Update persona
+- `getPersonaConfig()` - Get current persona
+- `addListener(event, callback)` - Event listener
+- `removeListener(event, callback)` - Remove listener
+
+### 5. Avatar ID Discovery
+
+To find available avatars in your account:
+
+```bash
+curl -s https://api.anam.ai/v1/avatars \
+  -H "Authorization: Bearer YOUR_API_KEY" | jq
+```
+
+Or in Node.js:
+
+```javascript
+const response = await fetch('https://api.anam.ai/v1/avatars', {
+  headers: { Authorization: `Bearer ${ANAM_API_KEY}` }
+});
+const { data } = await response.json();
+data.forEach(avatar => {
+  console.log(`${avatar.displayName}: ${avatar.id}`);
+});
+```
+
+## Common Issues & Solutions
+
+### Issue 1: "Legacy session tokens are no longer supported"
+
+**Cause:** Missing or incomplete `personaConfig` when generating session token.
+
+**Solution:** Include ALL required fields in `personaConfig`:
+- `name`
+- `avatarId`
+- `voiceId`
+- `llmId`
+- `systemPrompt`
+
+### Issue 2: "Avatar with id X does not exist"
+
+**Cause:** 
+- Avatar ID doesn't exist in your account
+- Avatar is not published/active
+- Using a generic/example avatar ID
+
+**Solution:**
+1. List available avatars using the API
+2. Use a valid avatar ID from your account
+3. Ensure avatar is published in Anam dashboard
+
+### Issue 3: "Avatar ID is required for ephemeral sessions"
+
+**Cause:** `avatarId` field omitted from `personaConfig`.
+
+**Solution:** Always include `avatarId` in the persona configuration.
+
+### Issue 4: Environment variables not loading
+
+**Cause:** Next.js dev server not restarted after `.env.local` changes.
+
+**Solution:** 
+```bash
+pkill -f "next dev"
 npm run dev
 ```
 
-### Video Element Empty
+### Issue 5: "video element with id [object HTMLVideoElement] not found"
 
-**Check:**
-1. Video ref is properly attached
-2. `streamToVideoElement()` was called
-3. Browser permissions for video
+**Cause:** Passing the video element object instead of its ID string.
 
-### Lip-Sync Out of Sync
+**Solution:**
+```javascript
+// ❌ Wrong
+await client.streamToVideoElement(videoElement);
 
-**Check:**
-1. Audio format matches (PCM16, 16kHz, mono)
-2. `sendAudioChunk()` is receiving data
-3. Network latency to both services
+// ✅ Correct
+await client.streamToVideoElement('video-id');
+```
 
----
+### Issue 6: Browser caching old session tokens
 
-## Cost Considerations
+**Cause:** Browser caching API responses with old avatar IDs.
 
-### Anam Pricing
+**Solution:**
+- Hard refresh: `Cmd+Shift+R` (Mac) or `Ctrl+Shift+R` (Windows/Linux)
+- Add cache-busting headers to API route
+- Add timestamp to API requests: `/api/endpoint?t=${Date.now()}`
 
-- **Free tier:** Limited minutes/month
-- **Paid plans:** Based on usage (minutes of avatar time)
+## Test Files
 
-**Tip:** Monitor usage at [lab.anam.ai](https://lab.anam.ai) → Usage
+### Simple Standalone Test
 
-### Combined Costs
+**File:** `/public/anam-simple-test.html`
 
-Running both ElevenLabs + Anam:
-- **ElevenLabs:** Audio processing + conversation
-- **Anam:** Avatar rendering
+A minimal HTML file for testing Anam integration without framework overhead:
+- Uses CDN for SDK (`https://cdn.jsdelivr.net/npm/@anam-ai/js-sdk@latest/+esm`)
+- Direct API token generation
+- Simple start/stop controls
+- Logging for debugging
 
-**Estimate:** ~2x cost vs audio-only
+**Usage:**
+```
+http://localhost:3000/anam-simple-test.html
+```
 
----
+### React Component Test
 
-## Performance
+**File:** `/app/research/avatar-test/page.tsx`
 
-### Metrics
+React-based test page for Anam integration with Next.js.
 
-- **Avatar load time:** ~2-3 seconds
-- **Lip-sync latency:** < 200ms (network dependent)
-- **Video quality:** Adjustable (automatic based on bandwidth)
+## Architecture Options
 
-### Optimization Tips
+### Option 1: Standalone Anam (Current Working Solution)
 
-1. **Preload avatar** during consent screen
-2. **Show loading state** while avatar initializes
-3. **Graceful fallback** to chat-only if avatar fails
-4. **Monitor bandwidth** and adjust quality
+Anam handles both visual avatar and conversation AI:
 
----
+```
+User ↔ Browser ↔ Anam Client ↔ Anam API
+                      ↓
+                  Video Element
+```
 
-## Future Enhancements
+**Pros:**
+- Simple integration
+- All-in-one solution
+- Working and tested
 
-### Short-term
-- [ ] Direct WebSocket implementation for audio passthrough
-- [ ] Mobile-specific UI optimization
-- [ ] Avatar loading progress indicator
-- [ ] Bandwidth detection and quality adjustment
+**Cons:**
+- Less control over conversation flow
+- Can't use custom LLM/voice providers easily
 
-### Medium-term
-- [ ] Multiple avatar options for users to choose
-- [ ] Custom branding on avatar
-- [ ] Picture-in-picture mode
-- [ ] Screen recording of conversations
+### Option 2: Audio Passthrough (Advanced)
 
-### Long-term
-- [ ] Multi-language avatar support
-- [ ] Emotion detection and expression
-- [ ] Custom avatar training with your brand
-- [ ] AR/VR avatar integration
+Use ElevenLabs for conversation and forward audio to Anam for lip-sync:
 
----
+```
+User ↔ Browser ↔ ElevenLabs ↔ Custom Agent
+         ↓
+    Anam Client (audio passthrough)
+         ↓
+    Video Element
+```
 
-## Testing Checklist
+**Pros:**
+- Custom conversation logic
+- Use ElevenLabs agents
+- More control
 
-### Local Testing
-- [ ] Avatar loads successfully
-- [ ] Video element displays properly
-- [ ] Fallback works if avatar fails
-- [ ] Chat bubbles work alongside avatar
-- [ ] End conversation cleans up resources
+**Cons:**
+- Complex WebSocket management
+- Requires audio forwarding
+- More potential points of failure
 
-### Browser Testing
-- [ ] Chrome (desktop)
-- [ ] Safari (desktop)
-- [ ] Firefox (desktop)
-- [ ] Chrome (mobile) - consider disabling
-- [ ] Safari (iOS) - consider disabling
+## Best Practices
 
----
+1. **Always validate avatar ID** before deploying
+2. **Restart dev server** after environment variable changes
+3. **Use cache-busting** for API endpoints that return session tokens
+4. **Pass element IDs as strings** to SDK methods, not DOM objects
+5. **Handle errors gracefully** with try-catch blocks
+6. **Clear video srcObject** when stopping to free resources
+7. **Test in incognito mode** to avoid cache issues
+8. **Keep session tokens secure** - generate server-side only
+
+## Default IDs for Testing
+
+### Voice IDs (Anam Defaults)
+- `6bfbe25a-979d-40f3-a92b-5394170af54b` - Default Anam voice
+
+### LLM IDs (Anam Defaults)
+- `0934d97d-0c3a-4f33-91b0-5e136a0ef466` - Default Anam LLM
+
+**Note:** These are Anam system defaults and should work with any account.
+
+## Next Steps
+
+- [ ] Integrate avatar into main research flow (`/app/research/page.tsx`)
+- [ ] Add avatar toggle in UI
+- [ ] Test with ElevenLabs audio passthrough (advanced)
+- [ ] Add avatar selection UI for multiple avatars
+- [ ] Implement error recovery and reconnection logic
+- [ ] Add analytics/tracking for avatar interactions
 
 ## Resources
 
-**Anam Documentation:**
-- [ElevenLabs Integration](https://docs.anam.ai/third-party-integrations/elevenlabs)
-- [Avatar Gallery](https://docs.anam.ai/resources/avatar-gallery)
-- [SDK Reference](https://docs.anam.ai/sdk-reference/basic-usage)
-- [Anam Lab](https://lab.anam.ai)
-
-**ElevenLabs Documentation:**
-- [Conversational AI](https://elevenlabs.io/docs/conversational-ai)
-- [Audio Settings](https://elevenlabs.io/docs/api-reference/websocket)
-
-**Your Project Docs:**
-- [Embedded Conversation Setup](./embedded-conversation-setup.md)
-- [Real-Time Transcript Features](./real-time-transcript-features.md)
-
----
-
-## Support
-
-**Anam Support:**
-- [Join Slack](https://join.slack.com/t/anam-ai/shared_invite/...)
-- [Report Issues](https://github.com/anam-ai/js-sdk/issues)
-
-**Project Support:**
-- See [docs/README.md](./README.md) for project documentation
-
----
-
-**Status:** ✅ Beta Integration Complete  
-**Branch:** `avatar-integration`  
-**Ready for:** Testing → Merge to main  
-**Recommendation:** Test thoroughly before production due to beta status
-
+- [Anam Documentation](https://docs.anam.ai/)
+- [Anam Dashboard](https://lab.anam.ai/)
+- [Migration Guide for Legacy Tokens](https://docs.anam.ai/resources/migrating-legacy)
+- [SDK Reference](https://docs.anam.ai/js-sdk/reference)

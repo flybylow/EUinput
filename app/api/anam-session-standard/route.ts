@@ -54,10 +54,19 @@ export async function GET(request: NextRequest) {
 
     const data = await response.json();
 
-    return NextResponse.json({
-      sessionToken: data.sessionToken,
-      avatarId: ANAM_AVATAR_ID,
-    });
+    return NextResponse.json(
+      {
+        sessionToken: data.sessionToken,
+        avatarId: ANAM_AVATAR_ID,
+      },
+      {
+        headers: {
+          'Cache-Control': 'no-store, no-cache, must-revalidate',
+          'Pragma': 'no-cache',
+          'Expires': '0',
+        },
+      }
+    );
   } catch (error: any) {
     console.error('Error creating Anam session:', error);
     return NextResponse.json(

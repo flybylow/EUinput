@@ -73,7 +73,7 @@
     import { createClient } from 'https://cdn.jsdelivr.net/npm/@anam-ai/js-sdk@latest/+esm';
     
     const API_KEY = 'NmUwMTAxYTYtMWVjYi00NGFmLTk3NjYtNDA0ZDg3ZGFjZjFlOnY1WFV0Ukp3S3B2dno1NmQ3eWo3aVRoTzRMQXRZQVJnNExHbzFiU3RFWE09';
-    const AVATAR_ID = 'anna-generic-1';
+    const AVATAR_ID = 'edf6fdcb-acab-44b8-b974-ded72665ee26'; // Mia - studio
     
     const video = document.getElementById('video');
     const status = document.getElementById('status');
@@ -126,11 +126,18 @@
         
         log('3. Starting session...');
         setStatus('Starting session...', '#f59e0b');
-        await client.startSession();
-        log('✅ Session started');
+        
+        // Try to get more error details
+        try {
+          await client.startSession();
+          log('✅ Session started');
+        } catch (sessionError) {
+          log(`Session start error details: ${JSON.stringify(sessionError)}`);
+          throw sessionError;
+        }
         
         log('4. Streaming to video...');
-        await client.streamToVideoElement(video);
+        await client.streamToVideoElement('video'); // Pass ID string, not element
         log('✅ Avatar connected!');
         
         setStatus('Connected ✅', '#22c55e');
@@ -143,12 +150,22 @@
     };
     
     document.getElementById('stop').onclick = async () => {
-      if (client) {
-        log('Stopping...');
-        await client.stopSession();
-        client = null;
-        setStatus('Stopped', '#6b7280');
-        log('✅ Stopped');
+      try {
+        if (client) {
+          log('Stopping...');
+          setStatus('Stopping...', '#f59e0b');
+          await client.stopStreaming();
+          client = null;
+          setStatus('Stopped', '#6b7280');
+          log('✅ Stopped');
+          // Clear video
+          video.srcObject = null;
+        } else {
+          log('⚠️ No active session to stop');
+        }
+      } catch (err) {
+        log(`❌ Error stopping: ${err.message}`);
+        console.error(err);
       }
     };
   </script>
