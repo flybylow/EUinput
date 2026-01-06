@@ -23,8 +23,8 @@ export default function AnamTestPage() {
       
       console.log('1. Fetching Anam session token...');
       
-      // Get session token
-      const response = await fetch('/api/anam-session');
+      // Get session token (standard mode, not passthrough)
+      const response = await fetch('/api/anam-session-standard');
       if (!response.ok) {
         const errorData = await response.json();
         throw new Error(errorData.error || 'Failed to get session token');
