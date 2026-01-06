@@ -144,6 +144,7 @@ export function ElevenLabsTranscript({
   const [messages, setMessages] = useState<Message[]>([]);
   const [isStarted, setIsStarted] = useState(false);
   const messagesEndRef = useRef<HTMLDivElement>(null);
+  const messagesRef = useRef<Message[]>([]); // Keep a ref to avoid stale closure
   
   // Auto-scroll to bottom
   const scrollToBottom = useCallback(() => {
@@ -161,54 +162,61 @@ export function ElevenLabsTranscript({
       const message = payload.message;
       
       setMessages(prev => {
+        let updatedMessages: Message[];
+        
         // Check if we're updating a tentative message
         const lastMessage = prev[prev.length - 1];
         
         if (lastMessage && lastMessage.role === role && !lastMessage.isFinal) {
           // Update the tentative message
-          return [
+          updatedMessages = [
             ...prev.slice(0, -1),
             { ...lastMessage, content: message, isFinal: true }
           ];
-        }
-        
-        // Split message by newlines to create separate bubbles
-        const lines = message.split('\n').filter(line => line.trim() !== '');
-        
-        // If it's a single line, add as one message
-        if (lines.length <= 1) {
-          return [
-            ...prev,
-            {
-              id: `${Date.now()}-${Math.random()}`,
+        } else {
+          // Split message by newlines to create separate bubbles
+          const lines = message.split('\n').filter(line => line.trim() !== '');
+          
+          // If it's a single line, add as one message
+          if (lines.length <= 1) {
+            updatedMessages = [
+              ...prev,
+              {
+                id: `${Date.now()}-${Math.random()}`,
+                role,
+                content: message,
+                timestamp: new Date(),
+                isFinal: true,
+              }
+            ];
+          } else {
+            // Multiple lines - create separate bubbles
+            const timestamp = new Date();
+            const newBubbles = lines.map((line, index) => ({
+              id: `${Date.now()}-${Math.random()}-${index}`,
               role,
-              content: message,
-              timestamp: new Date(),
+              content: line,
+              timestamp: new Date(timestamp.getTime() + index * 100),
               isFinal: true,
-            }
-          ];
+            }));
+            
+            updatedMessages = [...prev, ...newBubbles];
+          }
         }
         
-        // Multiple lines - create separate bubbles
-        const timestamp = new Date();
-        const newMessages = lines.map((line, index) => ({
-          id: `${Date.now()}-${Math.random()}-${index}`,
-          role,
-          content: line,
-          timestamp: new Date(timestamp.getTime() + index * 100), // Slight timestamp offset
-          isFinal: true,
-        }));
-        
-        return [...prev, ...newMessages];
+        // Update the ref with the latest messages
+        messagesRef.current = updatedMessages;
+        return updatedMessages;
       });
     },
     onError: (error) => {
       console.error('ElevenLabs error:', error);
     },
     onDisconnect: () => {
+      console.log('Disconnected. Messages:', messagesRef.current.length);
       setIsStarted(false);
       if (onConversationEnd) {
-        onConversationEnd(messages);
+        onConversationEnd(messagesRef.current);
       }
     },
   });
@@ -232,6 +240,7 @@ export function ElevenLabsTranscript({
       
       setIsStarted(true);
       setMessages([]);
+      messagesRef.current = [];
     } catch (error) {
       console.error('Failed to start conversation:', error);
       alert('Please allow microphone access to start the conversation.');
@@ -240,12 +249,13 @@ export function ElevenLabsTranscript({
   
   // Stop conversation
   const handleStop = useCallback(async () => {
+    console.log('Manually ending conversation. Messages:', messagesRef.current.length);
     await conversation.endSession();
     setIsStarted(false);
     if (onConversationEnd) {
-      onConversationEnd(messages);
+      onConversationEnd(messagesRef.current);
     }
-  }, [conversation, messages, onConversationEnd]);
+  }, [conversation, onConversationEnd]);
   
   return (
     <div className={`flex flex-col h-full bg-white rounded-xl shadow-lg overflow-hidden ${className}`}>

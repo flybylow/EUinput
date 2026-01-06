@@ -143,32 +143,16 @@ export default function ResearchPage({ searchParams }: ResearchPageProps) {
     }
   }, [source, campaign, ref]);
   
-  // Handle conversation end - save to database
+  // Handle conversation end
   const handleConversationEnd = useCallback(async (messages: Message[]) => {
+    console.log('Conversation ended with', messages.length, 'messages:', messages);
     setMessageCount(messages.length);
     setView('complete');
     
-    // Optional: Send transcript to your API for additional processing
-    try {
-      await fetch('/api/research/save-transcript', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({
-          messages: messages.map(m => ({
-            role: m.role,
-            content: m.content,
-            timestamp: m.timestamp.toISOString(),
-          })),
-          source: source || 'direct',
-          campaign,
-          ref,
-        }),
-      });
-    } catch (error) {
-      console.error('Failed to save transcript:', error);
-      // Don't block user experience on error
-    }
-  }, [source, campaign, ref]);
+    // Note: Conversation data is automatically saved via ElevenLabs webhook
+    // The webhook sends structured data to your Supabase database
+    // This transcript is just for display purposes
+  }, []);
   
   return (
     <main className="min-h-screen bg-gradient-to-b from-blue-50 to-white flex items-center justify-center p-4">
