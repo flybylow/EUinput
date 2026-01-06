@@ -171,17 +171,34 @@ export function ElevenLabsTranscript({
           ];
         }
         
-        // Add new message
-        return [
-          ...prev,
-          {
-            id: `${Date.now()}-${Math.random()}`,
-            role,
-            content: message,
-            timestamp: new Date(),
-            isFinal: true,
-          }
-        ];
+        // Split message by newlines to create separate bubbles
+        const lines = message.split('\n').filter(line => line.trim() !== '');
+        
+        // If it's a single line, add as one message
+        if (lines.length <= 1) {
+          return [
+            ...prev,
+            {
+              id: `${Date.now()}-${Math.random()}`,
+              role,
+              content: message,
+              timestamp: new Date(),
+              isFinal: true,
+            }
+          ];
+        }
+        
+        // Multiple lines - create separate bubbles
+        const timestamp = new Date();
+        const newMessages = lines.map((line, index) => ({
+          id: `${Date.now()}-${Math.random()}-${index}`,
+          role,
+          content: line,
+          timestamp: new Date(timestamp.getTime() + index * 100), // Slight timestamp offset
+          isFinal: true,
+        }));
+        
+        return [...prev, ...newMessages];
       });
     },
     onError: (error) => {
