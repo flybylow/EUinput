@@ -172,7 +172,9 @@ export function ElevenLabsTranscript({
       // Get Anam session token from our API
       const response = await fetch('/api/anam-session');
       if (!response.ok) {
-        throw new Error('Failed to get Anam session token');
+        const error = await response.json();
+        console.warn('Anam avatar disabled:', error.error);
+        throw new Error(error.error || 'Failed to get Anam session token');
       }
       
       const { sessionToken } = await response.json();
