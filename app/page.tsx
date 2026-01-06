@@ -53,8 +53,7 @@ export default function Home() {
             A research project by{" "}
             <a href="https://tabulas.eu" className="text-blue-600 hover:underline">
               Tabulas
-            </a>{" "}
-            in collaboration with Howest and Thomas More
+            </a>
           </p>
         </div>
       </section>
