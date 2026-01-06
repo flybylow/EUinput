@@ -141,8 +141,8 @@ export function AnamElevenLabsTranscript({
         disableInputAudio: true, // ElevenLabs handles microphone
       });
       
-      // Stream to video element
-      await anamClient.streamToVideoElement(videoRef.current);
+      // Stream to video element (pass ID string, not element object)
+      await anamClient.streamToVideoElement('anam-avatar-video');
       
       // Create audio input stream for lip-sync
       const audioInputStream = anamClient.createAgentAudioInputStream({
@@ -321,6 +321,7 @@ export function AnamElevenLabsTranscript({
         {/* Avatar Video - Top */}
         <div className="h-80 bg-gradient-to-b from-gray-900 to-gray-800 flex items-center justify-center p-4 relative">
           <video
+            id="anam-avatar-video"
             ref={videoRef}
             autoPlay
             playsInline

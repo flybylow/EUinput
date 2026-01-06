@@ -183,8 +183,8 @@ export function ElevenLabsTranscript({
       // TODO: Implement audio passthrough once SDK issues are resolved
       const anamClient = createClient(sessionToken);
       
-      // Stream avatar to video element
-      await anamClient.streamToVideoElement(videoRef.current);
+      // Stream avatar to video element (pass ID string, not element object)
+      await anamClient.streamToVideoElement('elevenlabs-anam-video');
       
       anamClientRef.current = anamClient;
       // audioInputStreamRef.current = audioInputStream; // Not used in standard mode
@@ -353,6 +353,7 @@ export function ElevenLabsTranscript({
         {enableAvatar && (
           <div className="w-1/2 bg-gradient-to-b from-gray-900 to-gray-800 flex items-center justify-center p-4">
             <video
+              id="elevenlabs-anam-video"
               ref={videoRef}
               autoPlay
               playsInline
