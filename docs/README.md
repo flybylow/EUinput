@@ -20,7 +20,8 @@ This folder contains all documentation for the EUinput project.
 - **[deployment-guide.md](./deployment-guide.md)** - Complete deployment instructions for production
 - **[nova-agent-setup.md](./nova-agent-setup.md)** - Detailed ElevenLabs agent configuration guide
 - **[embedded-conversation-setup.md](./embedded-conversation-setup.md)** - Embedded React conversation integration guide
-- **[anam-avatar-integration.md](./anam-avatar-integration.md)** - ✨ NEW: Complete Anam.ai visual avatar integration guide
+- **[anam-avatar-integration.md](./anam-avatar-integration.md)** - ✨ Complete Anam.ai visual avatar integration guide (standalone)
+- **[elevenlabs-anam-integration.md](./elevenlabs-anam-integration.md)** - ✨ NEW: ElevenLabs + Anam integration guide (audio passthrough)
 - **[../QUICKSTART.md](../QUICKSTART.md)** - Get running locally in 5 minutes
 
 ### Operations
@@ -50,6 +51,8 @@ This folder contains all documentation for the EUinput project.
 **Setting up ElevenLabs?** → See [nova-agent-setup.md](./nova-agent-setup.md)
 
 **Setting up Anam avatar?** → See [anam-avatar-integration.md](./anam-avatar-integration.md)
+
+**Integrating ElevenLabs + Anam?** → See [elevenlabs-anam-integration.md](./elevenlabs-anam-integration.md)
 
 **Need tracking links?** → Check [tracking-links.md](./tracking-links.md)
 
