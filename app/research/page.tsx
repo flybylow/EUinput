@@ -309,7 +309,7 @@ export default function ResearchPage({ searchParams }: ResearchPageProps) {
             agentAvatar="🎙️"
             onConversationEnd={handleConversationEnd}
             className="h-[600px]"
-            enableAvatar={false}  // Set to true when ANAM_API_KEY is configured
+            enableAvatar={true}  // Avatar enabled with Anam credentials
           />
           
           <p className="text-center text-xs text-gray-400 mt-4">
