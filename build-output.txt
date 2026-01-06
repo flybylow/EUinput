@@ -1,0 +1,22 @@
+
+> euinput@0.1.0 build
+> next build
+
+  ▲ Next.js 14.2.3
+  - Environments: .env.local
+
+   Creating an optimized production build ...
+ ✓ Compiled successfully
+   Linting and checking validity of types ...
+Failed to compile.
+
+./app/research/avatar-test/page.tsx:42:24
+Type error: Property 'startSession' is private and only accessible within class 'AnamClient'.
+
+[0m [90m 40 |[39m       [0m
+[0m [90m 41 |[39m       console[33m.[39mlog([32m'3. Starting session...'[39m)[33m;[39m[0m
+[0m[31m[1m>[22m[39m[90m 42 |[39m       [36mawait[39m anamClient[33m.[39mstartSession()[33m;[39m[0m
+[0m [90m    |[39m                        [31m[1m^[22m[39m[0m
+[0m [90m 43 |[39m       [0m
+[0m [90m 44 |[39m       console[33m.[39mlog([32m'4. Streaming to video element...'[39m)[33m;[39m[0m
+[0m [90m 45 |[39m       [36mif[39m (videoRef[33m.[39mcurrent) {[0m

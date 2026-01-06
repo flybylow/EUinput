@@ -21,6 +21,7 @@ interface Message {
   role: 'user' | 'agent';
   content: string;
   timestamp: Date;
+  isFinal: boolean;
 }
 
 interface TranscriptProps {
@@ -204,6 +205,7 @@ export function AnamElevenLabsTranscript({
             role: 'user',
             content: text,
             timestamp: new Date(),
+            isFinal: true,
           };
           setMessages(prev => {
             const updated = [...prev, newMessage];
@@ -221,6 +223,7 @@ export function AnamElevenLabsTranscript({
             role: 'agent',
             content: line,
             timestamp: new Date(Date.now() + index * 100),
+            isFinal: true,
           }));
           
           setMessages(prev => {

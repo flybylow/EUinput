@@ -38,13 +38,9 @@ export default function AnamTestPage() {
       // Create Anam client (STANDARD MODE - not passthrough)
       const anamClient = createClient(sessionToken);
       
-      console.log('3. Starting session...');
-      await anamClient.startSession();
-      
-      console.log('4. Streaming to video element...');
-      if (videoRef.current) {
-        await anamClient.streamToVideoElement(videoRef.current);
-      }
+      console.log('3. Streaming to video element (auto-starts session)...');
+      // streamToVideoElement automatically calls startSession internally
+      await anamClient.streamToVideoElement('anam-test-video');
       
       anamClientRef.current = anamClient;
       setStatus('connected');
@@ -86,6 +82,7 @@ export default function AnamTestPage() {
         {/* Video Container */}
         <div className="bg-gray-900 rounded-xl overflow-hidden mb-6 relative" style={{ height: '400px' }}>
           <video
+            id="anam-test-video"
             ref={videoRef}
             autoPlay
             playsInline

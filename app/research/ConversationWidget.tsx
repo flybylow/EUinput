@@ -31,9 +31,10 @@ export default function ConversationWidget({
     onMessage: (message) => {
       console.log('Message:', message);
     },
-    onError: (error) => {
+    onError: (error: any) => {
       console.error('ElevenLabs error:', error);
-      setErrorMessage(typeof error === 'string' ? error : error?.message || 'Connection error occurred');
+      const message = typeof error === 'string' ? error : (error?.message || 'Connection error occurred');
+      setErrorMessage(message);
       setStatus('error');
     },
   });
