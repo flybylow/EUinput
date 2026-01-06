@@ -156,8 +156,9 @@ export function ElevenLabsTranscript({
   
   // ElevenLabs conversation hook
   const conversation = useConversation({
-    onMessage: ({ message, source }: { message: string; source: Role }) => {
-      const role = source === 'ai' ? 'agent' : 'user';
+    onMessage: (payload) => {
+      const role: 'user' | 'agent' = payload.source === 'ai' ? 'agent' : 'user';
+      const message = payload.message;
       
       setMessages(prev => {
         // Check if we're updating a tentative message
@@ -221,7 +222,10 @@ export function ElevenLabsTranscript({
       if (signedUrl) {
         await conversation.startSession({ signedUrl });
       } else if (agentId) {
-        await conversation.startSession({ agentId });
+        await conversation.startSession({ 
+          agentId,
+          connectionType: 'webrtc' as any // Type workaround for SDK
+        });
       } else {
         throw new Error('Either signedUrl or agentId is required');
       }
