@@ -179,23 +179,15 @@ export function ElevenLabsTranscript({
       
       const { sessionToken } = await response.json();
       
-      // Create Anam client with audio passthrough (ElevenLabs handles microphone)
-      const anamClient = createClient(sessionToken, {
-        disableInputAudio: true, // ElevenLabs handles microphone
-      });
+      // Create Anam client in standard mode (not audio passthrough for now)
+      // TODO: Implement audio passthrough once SDK issues are resolved
+      const anamClient = createClient(sessionToken);
       
       // Stream avatar to video element
       await anamClient.streamToVideoElement(videoRef.current);
       
-      // Create agent audio input stream for lip-sync
-      const audioInputStream = anamClient.createAgentAudioInputStream({
-        encoding: 'pcm_s16le',
-        sampleRate: 16000,
-        channels: 1,
-      });
-      
       anamClientRef.current = anamClient;
-      audioInputStreamRef.current = audioInputStream;
+      // audioInputStreamRef.current = audioInputStream; // Not used in standard mode
       setAvatarReady(true);
       
       console.log('Anam avatar initialized successfully');

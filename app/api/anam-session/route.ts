@@ -44,7 +44,8 @@ export async function GET(request: NextRequest) {
       body: JSON.stringify({
         personaConfig: {
           avatarId: ANAM_AVATAR_ID,
-          enableAudioPassthrough: true, // Enable external audio input (from ElevenLabs)
+          // Temporarily disabled audio passthrough - using standard mode
+          // enableAudioPassthrough: true,
         },
         // Optional: Store tracking metadata
         metadata: {
