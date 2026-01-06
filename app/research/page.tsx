@@ -309,7 +309,7 @@ export default function ResearchPage({ searchParams }: ResearchPageProps) {
             agentAvatar="🎙️"
             onConversationEnd={handleConversationEnd}
             className="h-[600px]"
-            enableAvatar={true}  // Avatar enabled with Anam credentials
+            enableAvatar={false}  // Disabled: Audio passthrough has SDK issues
           />
           
           <p className="text-center text-xs text-gray-400 mt-4">
