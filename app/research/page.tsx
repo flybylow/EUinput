@@ -64,7 +64,7 @@ function ConsentScreen({ onAccept }: { onAccept: () => void }) {
       </button>
       
       <p className="text-xs text-gray-400">
-        A research project by Tabulas in collaboration with Howest and Thomas More
+        A research project by Tabulas
       </p>
     </div>
   );
