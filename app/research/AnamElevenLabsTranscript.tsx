@@ -94,9 +94,15 @@ export function AnamElevenLabsTranscript({
   const audioInputStreamRef = useRef<any>(null);
   const elevenLabsClientRef = useRef<ElevenLabsWebSocketClient | null>(null);
   
-  // Auto-scroll
+  // Auto-scroll to top (since messages are reversed)
   useEffect(() => {
-    messagesEndRef.current?.scrollIntoView({ behavior: 'smooth' });
+    if (messages.length > 0) {
+      // Scroll to top to show newest message
+      const container = messagesEndRef.current?.parentElement;
+      if (container) {
+        container.scrollTop = 0;
+      }
+    }
   }, [messages]);
   
   // Cleanup on unmount to prevent Anam concurrency limit errors
@@ -318,8 +324,8 @@ export function AnamElevenLabsTranscript({
       
       {/* Main Content */}
       <div className="flex-1 flex flex-col overflow-hidden">
-        {/* Avatar Video - Top */}
-        <div className="h-80 bg-gradient-to-b from-gray-900 to-gray-800 flex items-center justify-center p-4 relative">
+        {/* Avatar Video - Sticky at Top */}
+        <div className="sticky top-0 z-10 h-64 bg-gradient-to-b from-gray-900 to-gray-800 flex items-center justify-center p-4 relative border-b-2 border-gray-700">
           <video
             id="anam-avatar-video"
             ref={videoRef}
@@ -338,8 +344,18 @@ export function AnamElevenLabsTranscript({
           )}
         </div>
         
-        {/* Messages - Bottom */}
-        <div className="flex-1 overflow-y-auto p-4 space-y-4 bg-gray-50">
+        {/* Messages - Scrollable Below Avatar (Newest First) */}
+        <div className="flex-1 overflow-y-auto p-4 space-y-4 bg-gray-50 flex flex-col-reverse">
+          {/* Messages render in reverse order - newest at top */}
+          {messages.map((message) => (
+            <ChatBubble 
+              key={message.id} 
+              message={message} 
+              agentName={agentName}
+            />
+          ))}
+          
+          {/* Empty state messages */}
           {messages.length === 0 && !isStarted && (
             <div className="flex flex-col items-center justify-center h-full text-gray-400">
               <div className="text-4xl mb-2">🎙️</div>
@@ -353,16 +369,6 @@ export function AnamElevenLabsTranscript({
               <p>Waiting for {agentName}...</p>
             </div>
           )}
-          
-          {messages.map((message) => (
-            <ChatBubble 
-              key={message.id} 
-              message={message} 
-              agentName={agentName}
-            />
-          ))}
-          
-          <div ref={messagesEndRef} />
         </div>
       </div>
       
