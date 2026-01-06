@@ -44,8 +44,7 @@ export async function GET(request: NextRequest) {
       body: JSON.stringify({
         personaConfig: {
           avatarId: ANAM_AVATAR_ID,
-          // Temporarily disabled audio passthrough - using standard mode
-          // enableAudioPassthrough: true,
+          enableAudioPassthrough: true, // Re-enabled for direct WebSocket implementation
         },
         // Optional: Store tracking metadata
         metadata: {
