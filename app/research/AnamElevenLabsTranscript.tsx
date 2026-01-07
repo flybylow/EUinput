@@ -29,6 +29,7 @@ interface TranscriptProps {
   agentName?: string;
   onConversationEnd?: (messages: Message[]) => void;
   className?: string;
+  enableAvatar?: boolean; // Optional: disable avatar for testing
 }
 
 // -----------------------------------------------------------------------------
@@ -76,11 +77,12 @@ function ChatBubble({
 // Main Component
 // -----------------------------------------------------------------------------
 
-export function AnamElevenLabsTranscript({
+export function AnamElevenLabsTranscript({ 
   agentId,
   agentName = 'Nova',
   onConversationEnd,
   className = '',
+  enableAvatar = false, // Disabled by default for faster testing
 }: TranscriptProps) {
   const [messages, setMessages] = useState<Message[]>([]);
   const [isStarted, setIsStarted] = useState(false);
@@ -130,6 +132,12 @@ export function AnamElevenLabsTranscript({
   
   // Initialize Anam avatar
   const initializeAvatar = useCallback(async () => {
+    if (!enableAvatar) {
+      console.log('⏭️ Avatar disabled - skipping Anam initialization');
+      setAvatarReady(true); // Mark as "ready" so we can proceed
+      return;
+    }
+    
     if (!videoRef.current) return;
     
     try {
@@ -174,7 +182,7 @@ export function AnamElevenLabsTranscript({
       
       setAvatarReady(false);
     }
-  }, []);
+  }, [enableAvatar]);
   
   // Start conversation
   const handleStart = useCallback(async () => {
@@ -283,6 +291,18 @@ export function AnamElevenLabsTranscript({
     }
   }, [onConversationEnd]);
   
+  // Auto-start conversation on mount
+  useEffect(() => {
+    // Small delay to ensure component is fully mounted
+    const timer = setTimeout(() => {
+      if (!isStarted && status === 'disconnected') {
+        handleStart();
+      }
+    }, 500);
+    
+    return () => clearTimeout(timer);
+  }, []); // Empty deps - only run once on mount
+  
   return (
     <div className={`flex flex-col h-full bg-white rounded-xl shadow-lg overflow-hidden ${className}`}>
       {/* Header */}
@@ -306,16 +326,8 @@ export function AnamElevenLabsTranscript({
           </div>
         </div>
         
-        {/* Control Button */}
-        {!isStarted ? (
-          <button
-            onClick={handleStart}
-            disabled={status === 'connecting'}
-            className="px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition font-medium text-sm disabled:opacity-50"
-          >
-            Start Conversation
-          </button>
-        ) : (
+        {/* Control Button - Only show End button when started */}
+        {isStarted && (
           <button
             onClick={handleStop}
             className="px-4 py-2 bg-red-500 text-white rounded-lg hover:bg-red-600 transition font-medium text-sm"
@@ -327,25 +339,27 @@ export function AnamElevenLabsTranscript({
       
       {/* Main Content */}
       <div className="flex-1 flex flex-col overflow-hidden">
-        {/* Avatar Video - Sticky at Top */}
-        <div className="sticky top-0 z-10 h-64 bg-gradient-to-b from-gray-900 to-gray-800 flex items-center justify-center p-4 relative border-b-2 border-gray-700">
-          <video
-            id="anam-avatar-video"
-            ref={videoRef}
-            autoPlay
-            playsInline
-            className="h-full object-contain rounded-lg"
-            style={{ transform: 'scaleX(-1)' }}
-          />
-          {!avatarReady && (
-            <div className="absolute inset-0 flex items-center justify-center bg-gray-900/50">
-              <div className="text-white text-center">
-                <div className="animate-spin text-4xl mb-2">🔄</div>
-                <p>Loading avatar...</p>
+        {/* Avatar Video - Sticky at Top (optional) */}
+        {enableAvatar && (
+          <div className="sticky top-0 z-10 h-64 bg-gradient-to-b from-gray-900 to-gray-800 flex items-center justify-center p-4 relative border-b-2 border-gray-700">
+            <video
+              id="anam-avatar-video"
+              ref={videoRef}
+              autoPlay
+              playsInline
+              className="h-full object-contain rounded-lg"
+              style={{ transform: 'scaleX(-1)' }}
+            />
+            {!avatarReady && (
+              <div className="absolute inset-0 flex items-center justify-center bg-gray-900/50">
+                <div className="text-white text-center">
+                  <div className="animate-spin text-4xl mb-2">🔄</div>
+                  <p>Loading avatar...</p>
+                </div>
               </div>
-            </div>
-          )}
-        </div>
+            )}
+          </div>
+        )}
         
         {/* Messages - Scrollable Below Avatar (Newest First) */}
         <div className="flex-1 overflow-y-auto p-4 space-y-4 bg-gray-50 flex flex-col-reverse">
